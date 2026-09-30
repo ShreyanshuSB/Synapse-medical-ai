@@ -76,7 +76,7 @@ $$\text{CT / DICOM} \longrightarrow \text{3D Preprocessing} \longrightarrow \tex
   - Density classification: solid, part-solid, ground-glass, calcified.
   - Anatomical lobe localization: Right Upper (RUL), Right Middle (RML), Right Lower (RLL), Left Upper (LUL), Left Lower (LLL).
 - **Evidence-Based Malignancy Risk & Explainability**:
-  - Implements the validated **Brock / PanCan multivariable logistic regression model** (McWilliams et al., NEJM 2013).
+  - Implements the published **Brock / PanCan multivariable logistic regression model** (McWilliams et al., NEJM 2013).
   - Standardized **ACR Lung-RADS v2022** classification (Categories 1, 2, 3, 4A, 4B, 4X) with actionable clinical management recommendations.
   - Explainable AI breakdown displaying relative factor attributions (Size, Upper Lobe, Density, Spiculation, Age, Smoking history, Emphysema).
   - **Interactive Clinical Factors Adjuster**: Allows clinicians to enter or update patient age, sex, smoking pack-years, family history, and emphysema to recalculate risk in real-time.
@@ -116,7 +116,7 @@ The repository strictly separates the active algorithmic and software implementa
 - **Longitudinal Growth Kinetics:** Schwartz Volume Doubling Time (VDT) calculations and prior vs current comparison.
 - **Human-in-the-Loop Corrections:** Radiologist override capabilities for findings.
 - **Structured Reporting:** PDF vector export via ReportLab.
-- **Optional Gemini Narrative Assistance:** Grounded clinical impressions when a `GEMINI_API_KEY` is provided; never alters numeric calculations.
+- **Optional Gemini Narrative Assistance:** Grounded narrative summaries when a `GEMINI_API_KEY` is provided; never alters numeric calculations.
 
 ### Optional External Model Integration (Weights Not Bundled)
 - **MONAI 3D RetinaNet Checkpoint (`lung_nodule_ct_detection`):** The repository provides modular interfaces to load local PyTorch/MONAI weights if placed in `MODEL_DIR`. Trained checkpoint files (`.pt`) are **not bundled** in this repository.
