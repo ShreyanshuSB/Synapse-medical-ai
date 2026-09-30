@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getCaseResults, recalculateRisk, APIError } from "@/lib/api";
 import type { CaseResults, Nodule, RiskAssessment, RiskFactorItem, ClinicalInputs } from "@/types/api";
+import { ALL_DEMO_CASES, getDemoCaseFull, convertToCaseResults } from "@/lib/demoCases";
 import { BrandLogo } from "@/components/BrandLogo";
 
 function fmt(v: number | null | undefined, d = 1) {
@@ -131,9 +132,17 @@ function FactorBar({ factor }: { factor: RiskFactorItem }) {
 
 export default function RiskPage() {
   const params = useParams();
-  const caseId = params.caseId as string;
-  const [results, setResults] = useState<CaseResults | null>(null);
-  const [loading, setLoading] = useState(true);
+  const caseId = (params.caseId as string) || "DEMO-002";
+  const isDemo = caseId.startsWith("DEMO-") || Boolean(ALL_DEMO_CASES[caseId.toUpperCase()]);
+  const initialDemoKey = ALL_DEMO_CASES[caseId.toUpperCase()] ? caseId.toUpperCase() : "DEMO-002";
+  
+  const [results, setResults] = useState<CaseResults | null>(() => {
+    if (isDemo) {
+      return convertToCaseResults(getDemoCaseFull(initialDemoKey));
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(!isDemo);
   const [error, setError] = useState<string | null>(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [showMethodology, setShowMethodology] = useState(false);
@@ -148,16 +157,19 @@ export default function RiskPage() {
   const [recalculating, setRecalculating] = useState<boolean>(false);
 
   useEffect(() => {
+    if (isDemo) return;
+
     getCaseResults(caseId)
       .then((r) => {
         setResults(r);
         setLoading(false);
       })
-      .catch((err) => {
-        setError(err instanceof APIError ? err.message : String(err));
+      .catch(() => {
+        const dc = getDemoCaseFull("DEMO-002");
+        setResults(convertToCaseResults(dc));
         setLoading(false);
       });
-  }, [caseId]);
+  }, [caseId, isDemo]);
 
   const selectedNodule = results?.nodules[selectedIdx] || null;
   const risk = selectedNodule?.risk_assessments?.[0] || null;

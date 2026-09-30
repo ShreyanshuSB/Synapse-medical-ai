@@ -20,9 +20,9 @@ This document describes all external machine learning architectures, pretrained 
   * Input Spacing: Standardized resampled voxel spacing of approximately `(0.703, 0.703, 1.25)` mm (X, Y, Z).
   * Intensity Windowing: Standard thoracic lung window `[-1000 HU, 400 HU]` normalized to `[0.0, 1.0]`.
   * Spatial Direction: Canonical LPS/RAS anatomical orientation.
-* **Published Model Performance (LUNA16 Benchmark):**
+* **Published Model Performance (PUBLISHED EXTERNAL BENCHMARK):**
   * Detection Sensitivity: ~94.2% at 1.0 false positives per scan (published evaluation from LUNA16 competition benchmark).
-  * *Note: Published benchmark results cited from MONAI Model Zoo documentation; not claimed as novel internal validation.*
+  * *Note: The referenced MONAI/LUNA16 sensitivity figure is a PUBLISHED EXTERNAL BENCHMARK and should not be interpreted as Synapse's own measured performance or internal validation.*
 * **Limitations:**
   * Performance relies on thin-slice thoracic CT scans ($\le 2.5$ mm slice thickness). Thick-slice or motion-degraded scans reduce candidate sensitivity.
 

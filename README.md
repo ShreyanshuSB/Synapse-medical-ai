@@ -7,11 +7,50 @@
 
 ---
 
+## Project Status
+
+| Metric | Status |
+| --- | --- |
+| **Status** | Experimental research/academic prototype |
+| **Deployment** | Local workstation |
+| **Clinical Status** | Not a diagnostic medical device — requires licensed specialist review |
+| **Model Weights** | Optional / not included in repository (local cache or algorithmic fallback) |
+| **Demo Data** | Synthetic / de-identified |
+| **Cloud AI** | Optional Google Gemini integration (narrative assistance only; non-numeric) |
+
+---
+
+## Screenshots
+
+The following screenshots are captured directly from the running workstation using the synthetic research demo studies:
+
+### 1. Clinical Workstation Dashboard
+![Clinical Workstation Dashboard](docs/screenshots/dashboard.png)
+*Risk-prioritized queue displaying synthetic demo cases with Brock risk scores, nodule counts, and review status.*
+
+### 2. Multi-Planar CT Workstation
+![Multi-Planar CT Workstation](docs/screenshots/ct-workstation.png)
+*Orthogonal multi-planar CT viewer (Axial, Coronal, Sagittal) with lung windowing, nodule detection overlays, calibrated measurements, and morphological metrics.*
+
+### 3. Interactive 3D Lesion Reconstruction
+![3D Anatomical Reconstruction](docs/screenshots/three-d-view.png)
+*Interactive 3D thoracic and nodule anatomical localization viewer showing lesion coordinates within the lung parenchyma.*
+
+### 4. Brock Malignancy Risk Engine & Explainability
+![Malignancy Risk & Explainability](docs/screenshots/risk-assessment.png)
+*Validated Brock / PanCan multivariable logistic regression risk engine, ACR Lung-RADS v2022 category, factor attributions, and interactive clinical adjuster.*
+
+### 5. Longitudinal Comparison & Growth Kinetics
+![Longitudinal Comparison & Growth Kinetics](docs/screenshots/report-or-comparison.png)
+*Side-by-side serial CT comparison with Schwartz Volume Doubling Time (VDT) calculation and kinetic growth categorization.*
+
+---
+
 ## 1. Problem Statement
 
 > **"Pulmonary Nodule Risk Assessment:** AI that detects and segments lung nodules in 3D CT scans, measures morphology and density, and estimates malignancy risk."
 
-PulmoScan AI addresses this by providing an integrated, radiology-grade workstation experience that mirrors the complete clinical imaging workflow:
+PulmoScan AI addresses this by providing an integrated, radiology workflow-oriented workstation experience that mirrors the complete clinical imaging workflow:
 $$\text{CT / DICOM} \longrightarrow \text{3D Preprocessing} \longrightarrow \text{Detection} \longrightarrow \text{Segmentation} \longrightarrow \text{Morphology \& Density} \longrightarrow \text{Risk Assessment} \longrightarrow \text{Temporal Growth} \longrightarrow \text{Radiology Report}$$
 
 ---
@@ -53,13 +92,40 @@ $$\text{CT / DICOM} \longrightarrow \text{3D Preprocessing} \longrightarrow \tex
   - Comprehensive clinical report following standard thoracic radiology formatting.
   - Instant vector PDF generation via ReportLab with study info, quantitative table, Lung-RADS recommendations, and disclaimer.
 - **Turnkey Demo Suite**:
-  - **DEMO-001**: Screening CT — No significant nodules (Lung-RADS 1).
-  - **DEMO-002**: Single 5.2 mm solid nodule in Right Upper Lobe (Lung-RADS 3).
-  - **DEMO-003**: Multiple nodules featuring an 8.4 mm part-solid lesion in RUL with spiculation and documented temporal interval growth (+62% vol, VDT 342 days, Lung-RADS 4A/4X).
+  - **DEMO-001**: Screening CT — Solitary 5.4 mm solid nodule in LLL (Lung-RADS 3).
+  - **DEMO-002**: Dominant 8.6 mm intermediate part-solid lesion in RLL with satellite nodules (Lung-RADS 4A).
+  - **DEMO-003**: 16.4 mm high-risk spiculated part-solid lesion in RUL with documented temporal growth (VDT 198 days, Lung-RADS 4X).
+  - **DEMO-004**: Screening CT — No significant nodules (ACR Lung-RADS Category 1 Negative).
+  - **DEMO-005**: Multiple nodules of mixed suspicion featuring dominant 14.2 mm RUL lesion (Lung-RADS 4B).
 
 ---
 
-## 3. Architecture
+## 3. Implementation Status & Model Weight Policy
+
+The repository strictly separates the active algorithmic and software implementation from external neural weights:
+
+### Current Implementation (Included & Fully Functional)
+- **DICOM / NIfTI Ingestion:** Full metadata parsing, modality check, and geometric validation via Pydicom.
+- **CT Preprocessing:** Conversion to Hounsfield Units, canonical LPS/RAS reorientation, target resampling ($0.703 \times 0.703 \times 1.25$ mm), and lung window normalization.
+- **Multi-Planar Reconstruction (MPR):** Real-time orthogonal slicing across Axial, Coronal, and Sagittal planes.
+- **Candidate Detection Fallback:** Algorithmic 3D candidate nodule filtering and ROI localization.
+- **Deterministic 3D Segmentation:** Voxel-level 3D adaptive thresholding and planar boundary contour extraction via `skimage.measure.find_contours`.
+- **Quantitative Morphological & HU Analytics:** True volume, diameter, sphericity, compactness, and HU statistics.
+- **Brock / PanCan Risk Engine:** Exact mathematical implementation of the NEJM 2013 logistic regression formula.
+- **ACR Lung-RADS v2022 Logic:** Deterministic category assignment (1 through 4X) and clinical recommendations.
+- **Longitudinal Growth Kinetics:** Schwartz Volume Doubling Time (VDT) calculations and prior vs current comparison.
+- **Human-in-the-Loop Corrections:** Radiologist override capabilities for findings.
+- **Structured Reporting:** PDF vector export via ReportLab.
+- **Optional Gemini Narrative Assistance:** Grounded clinical impressions when a `GEMINI_API_KEY` is provided; never alters numeric calculations.
+
+### Optional External Model Integration (Weights Not Bundled)
+- **MONAI 3D RetinaNet Checkpoint (`lung_nodule_ct_detection`):** The repository provides modular interfaces to load local PyTorch/MONAI weights if placed in `MODEL_DIR`. Trained checkpoint files (`.pt`) are **not bundled** in this repository.
+- **MONAI 3D Segmentation Checkpoint (UNETR / 3D U-Net):** Can be placed in `MODEL_DIR/nodule_segmentation/model.pt` for neural inference; in their absence, the system automatically runs the deterministic 3D morphological segmentation fallback.
+- **Benchmark Performance Clarity:** The referenced MONAI/LUNA16 sensitivity figure (~94.2% at 1.0 FPs/scan) is a **PUBLISHED EXTERNAL BENCHMARK** from the LUNA16 challenge and should not be interpreted as Synapse's own measured performance or internal validation.
+
+---
+
+## 4. Architecture
 
 ```text
                                   Browser (Client)
@@ -75,7 +141,7 @@ $$\text{CT / DICOM} \longrightarrow \text{3D Preprocessing} \longrightarrow \tex
                    │                                           │
                    └─────────────────────┬─────────────────────┘
                                          ▼
-                               AI & Analytics Core
+                                AI & Analytics Core
                    • ConcreteNoduleDetector (Candidate Centroids & BBoxes)
                    • ConcreteNoduleSegmenter (3D Contours & Voxel Masks)
                    • ConcreteFeatureExtractor (HU Stats, Morphology, Lobes)
@@ -90,21 +156,31 @@ $$\text{CT / DICOM} \longrightarrow \text{3D Preprocessing} \longrightarrow \tex
 
 ---
 
-## 4. Folder Structure
+## 5. Folder Structure
 
 ```text
 Synapse/
-├── README.md                       # Comprehensive documentation
-├── docs/                           # Architectural & AI technical documentation
-│   ├── architecture.md
-│   ├── ai_pipeline.md
-│   └── models.md
+├── README.md                       # Comprehensive documentation & project overview
+├── LICENSE                         # MIT License for original implementation
+├── SECURITY.md                     # Security policy, PHI guidelines, and vulnerability reporting
+├── THIRD_PARTY_NOTICES.md          # Third-party attribution, model, benchmark, and literature notices
+├── docs/                           # Technical documentation & screenshots
+│   ├── architecture.md             # System architecture & data flow
+│   ├── ai_pipeline.md              # Pipeline stages & modular interfaces
+│   ├── models.md                   # External model benchmarks & mathematical specifications
+│   ├── privacy.md                  # Privacy, local storage boundaries, and cloud data handling
+│   └── screenshots/                # Real application UI captures (synthetic demo data)
+│       ├── dashboard.png
+│       ├── ct-workstation.png
+│       ├── three-d-view.png
+│       ├── risk-assessment.png
+│       └── report-or-comparison.png
 ├── backend/
 │   ├── app/
 │   │   ├── ai/                     # AI Pipeline interfaces & implementations
 │   │   │   ├── pipeline.py         # Abstract interfaces (Detector, Segmenter, Risk, etc.)
-│   │   │   ├── detector.py         # Concrete 3D candidate detector
-│   │   │   ├── segmenter.py        # Concrete 3D segmenter & contour generator
+│   │   │   ├── detector.py         # Concrete 3D candidate detector (optional MONAI weights)
+│   │   │   ├── segmenter.py        # Concrete 3D segmenter & contour generator (real/fallback)
 │   │   │   ├── feature_extractor.py# Quantitative morphology & HU analytics
 │   │   │   ├── risk_engine.py      # Brock PanCan model & ACR Lung-RADS
 │   │   │   └── demo_service.py     # Isolated structured demo datasets
@@ -129,7 +205,7 @@ Synapse/
 │   ├── seed_demo.py                # Database seeder for demo cases
 │   ├── test_full_suite.py          # End-to-end automated test suite
 │   ├── requirements.txt
-│   └── pulmoscan.db                # SQLite database (generated locally via seed_demo.py)
+│   └── pulmoscan.db                # generated locally by seed_demo.py; not tracked
 └── frontend/
     ├── app/
     │   ├── page.tsx                # Professional landing page
@@ -141,19 +217,21 @@ Synapse/
     │   ├── report/[caseId]/        # Radiology report & PDF download
     │   └── cases/page.tsx          # Case history & status management
     ├── components/
-    │   └── MedicalCTViewer.tsx     # Canvas multi-slice viewer (MPR, WL/WW, calipers)
+    │   ├── MedicalCTViewer.tsx     # Canvas multi-slice viewer (MPR, WL/WW, calipers)
+    │   └── ThreeDReconstructionViewer.tsx # 3D nodule anatomical localization
     ├── lib/
-    │   └── api.ts                  # Typed client for FastAPI backend
+    │   ├── api.ts                  # Typed client for FastAPI backend
+    │   └── demoCases.ts            # Single authoritative source of truth for demo cases
     └── types/
         └── api.ts                  # Shared TypeScript interfaces
 ```
 
 ---
 
-## 5. Getting Started & Local Setup
+## 6. Getting Started & Local Setup
 
 ### Prerequisites
-- Python 3.10+ (tested on Python 3.14)
+- Python 3.10+
 - Node.js 18+ and npm
 
 ### Backend Setup
@@ -186,14 +264,16 @@ Synapse/
 
 ---
 
-## 6. Running Tests
+## 7. Automated Test Suite
 
-Run the comprehensive end-to-end verification test suite:
+The backend includes an end-to-end automated test suite (`backend/test_full_suite.py`) designed to verify the complete processing lifecycle:
+
 ```bash
 cd backend
 python test_full_suite.py
 ```
-This script tests:
+
+The test scripts cover:
 1. Health check & configuration
 2. Demo cases retrieval
 3. Case history querying
@@ -205,9 +285,11 @@ This script tests:
 9. Expert nodule adjustment ("Correct AI")
 10. Structured report generation and PDF binary export
 
+*(Note: In environments where Python is not installed in the host shell, frontend verification runs via `npm run lint`, `npx tsc --noEmit`, and `npm run build`.)*
+
 ---
 
-## 7. Future Model Integration Roadmap
+## 8. Future Model Integration Roadmap
 
 The codebase isolates model inference using standard abstract interfaces (`backend/app/ai/pipeline.py`):
 1. **NoduleDetector**: Plug in MONAI's pretrained 3D RetinaNet (`lung_nodule_ct_detection`) trained on LUNA16.
@@ -216,6 +298,6 @@ The codebase isolates model inference using standard abstract interfaces (`backe
 
 ---
 
-## 8. Research Disclaimer
+## 9. Research Disclaimer
 
-*PulmoScan AI is a research decision-support prototype. It does not replace clinical judgment, thoracic biopsy, or radiological interpretation by certified medical specialists.*
+*PulmoScan AI is a research and decision-support prototype. It is NOT a cleared diagnostic medical device. It does not replace clinical judgment, thoracic biopsy, or radiological interpretation by certified medical specialists.*

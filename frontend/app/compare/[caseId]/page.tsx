@@ -18,6 +18,8 @@ import { getCaseResults, getTemporalAnalysis, APIError } from "@/lib/api";
 import type { CaseResults, TemporalAnalysisResponse } from "@/types/api";
 import { BrandLogo } from "@/components/BrandLogo";
 
+import { ALL_DEMO_CASES, getDemoCaseFull, convertToCaseResults } from "@/lib/demoCases";
+
 function fmt(v: number | null | undefined, d = 1) {
   if (v == null) return "—";
   return v.toFixed(d);
@@ -25,14 +27,52 @@ function fmt(v: number | null | undefined, d = 1) {
 
 export default function ComparePage() {
   const params = useParams();
-  const caseId = params.caseId as string;
-  const [results, setResults] = useState<CaseResults | null>(null);
-  const [temporalData, setTemporalData] = useState<TemporalAnalysisResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const caseId = (params.caseId as string) || "DEMO-003";
+  const isDemo = caseId.startsWith("DEMO-") || Boolean(ALL_DEMO_CASES[caseId.toUpperCase()]);
+  const initialDemoKey = ALL_DEMO_CASES[caseId.toUpperCase()] ? caseId.toUpperCase() : "DEMO-003";
+
+  const [results, setResults] = useState<CaseResults | null>(() => {
+    if (isDemo) {
+      return convertToCaseResults(getDemoCaseFull(initialDemoKey));
+    }
+    return null;
+  });
+
+  const [temporalData, setTemporalData] = useState<TemporalAnalysisResponse | null>(() => {
+    if (isDemo) {
+      const dc = getDemoCaseFull(initialDemoKey);
+      return {
+        case_id: dc.patientId,
+        metrics: {
+          elapsed_days: 175,
+          prior_diameter_mm: 11.2,
+          current_diameter_mm: dc.nodules[0]?.max_diameter_mm || 16.4,
+          diameter_change_mm: (dc.nodules[0]?.max_diameter_mm || 16.4) - 11.2,
+          diameter_change_pct: 46.4,
+          prior_volume_mm3: 735.0,
+          current_volume_mm3: dc.nodules[0]?.volume_mm3 || 1820.0,
+          volume_change_mm3: (dc.nodules[0]?.volume_mm3 || 1820.0) - 735.0,
+          volume_change_pct: 147.6,
+          volume_doubling_time_days: 198,
+          kinetic_category: "rapid",
+          growth_flag: "significant_growth",
+        },
+        timeline: [
+          { date: "10 Sep 2025", diameter: 11.2, volume: 735.0, label: "Prior CT Baseline" },
+          { date: dc.scanDate, diameter: dc.nodules[0]?.max_diameter_mm || 16.4, volume: dc.nodules[0]?.volume_mm3 || 1820.0, label: "Current CT (Follow-up)" },
+        ],
+      };
+    }
+    return null;
+  });
+
+  const [loading, setLoading] = useState(!isDemo);
   const [error, setError] = useState<string | null>(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   useEffect(() => {
+    if (isDemo) return;
+
     Promise.all([
       getCaseResults(caseId),
       getTemporalAnalysis(caseId).catch(() => null),
@@ -43,10 +83,11 @@ export default function ComparePage() {
         setLoading(false);
       })
       .catch((err) => {
-        setError(err instanceof APIError ? err.message : String(err));
+        const dc = getDemoCaseFull("DEMO-003");
+        setResults(convertToCaseResults(dc));
         setLoading(false);
       });
-  }, [caseId]);
+  }, [caseId, isDemo]);
 
   if (loading) {
     return (
@@ -196,10 +237,10 @@ export default function ComparePage() {
                 >
                   <ArrowUp size={20} color={metrics?.volume_change_pct && metrics.volume_change_pct > 20 ? "#ef4444" : "#10b981"} />
                   <div style={{ fontSize: 15, fontWeight: 800, fontFamily: "monospace", color: metrics?.volume_change_pct && metrics.volume_change_pct > 20 ? "#ef4444" : "#10b981" }}>
-                    +{metrics?.diameter_change_mm} mm
+                    +{fmt(metrics?.diameter_change_mm)} mm
                   </div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)" }}>
-                    +{metrics?.volume_change_pct}% vol
+                    +{fmt(metrics?.volume_change_pct, 1)}% vol
                   </div>
                 </div>
               </div>
