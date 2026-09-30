@@ -38,7 +38,7 @@ The following screenshots are captured directly from the running workstation usi
 
 ### 4. Brock Malignancy Risk Engine & Explainability
 ![Malignancy Risk & Explainability](docs/screenshots/risk-assessment.png)
-*Validated Brock / PanCan multivariable logistic regression risk engine, ACR Lung-RADS v2022 category, factor attributions, and interactive clinical adjuster.*
+*Published Brock / PanCan multivariable logistic regression risk engine, ACR Lung-RADS v2022 category, factor attributions, and interactive clinical adjuster.*
 
 ### 5. Longitudinal Comparison & Growth Kinetics
 ![Longitudinal Comparison & Growth Kinetics](docs/screenshots/report-or-comparison.png)
