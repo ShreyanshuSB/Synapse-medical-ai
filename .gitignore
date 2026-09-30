@@ -1,0 +1,67 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+out/
+.vercel/
+
+# TypeScript & Build Caches
+*.tsbuildinfo
+
+# Database & local data
+*.db
+*.sqlite
+*.sqlite3
+pulmoscan.db
+backend/pulmoscan.db
+
+# Generated volumes, uploads, reports & binary arrays
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+backend/data/reports/*
+!backend/data/reports/.gitkeep
+backend/data/volumes/*
+!backend/data/volumes/.gitkeep
+data/uploads/*
+!data/uploads/.gitkeep
+data/reports/*
+!data/reports/.gitkeep
+data/volumes/*
+!data/volumes/.gitkeep
+*.npy
+*.npz
+
+# Internal developer agent instructions & local scratch notes
+frontend/AGENTS.md
+frontend/CLAUDE.md
+AGENTS.md
+CLAUDE.md
+MyPlan.txt
+
+# Operating System files & logs
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
